@@ -1,0 +1,49 @@
+#!/usr/bin/perl
+#
+# Wrapper for CUPS' pdftopdf filter that converts input to grayscale before
+# invoking pdftopdf.
+#
+# Copyright 2016 Johannes Grassler <johannes@btw23.de>
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# version 2.0.
+# 
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+# Preserve pdftopdf arguments
+my @pdftopdf_args = ();
+foreach my $arg ( @ARGV )
+  {
+  push @pdftopdf_args, "'$arg'";
+  }
+
+# Have gs(1) read from STDIN by default, but use the file argument to pdftopdf
+# if it has been provided.
+my $file = '-';
+if ( scalar @pdftopdf_args > 5 )
+  {
+  $file = pop(@pdftopdf_args);
+  }
+
+my @cmd = (
+ '/bin/sh', '-c',
+   "/usr/bin/gs"
+   . " -sDEVICE=pdfwrite"
+   . " -sColorConversionStrategy=Gray"
+   . " -sOutputFile=-"
+   . " -dProcessColorModel=/DeviceGray"
+   . " -dCompatibilityLevel=1.1"
+   . " -dNOPAUSE"
+   . " -dBATCH"
+   . " $file"
+   . " | /usr/lib/cups/filter/pdftopdf " . join(' ', @pdftopdf_args) );
+
+exec(@cmd);
